@@ -756,12 +756,18 @@ function pilihBox(el) {
 
         callGoogleScript('getTipeKupon', { nama: namaUser })
         .then(function(tipe) {
-          let hadiah = 10;
-          if (tipe === "kuponA") hadiah = [3000,4000,5000][Math.floor(Math.random()*3)];
-          else if (tipe === "kuponB") hadiah = [7000,8000,9000,10000][Math.floor(Math.random()*4)];
+          let hadiah;
+          if (tipe === "kuponA") {
+            hadiah = [3000,4000,5000][Math.floor(Math.random()*3)];
+          } else if (tipe === "kuponB") {
+            hadiah = [7000,8000,9000,10000][Math.floor(Math.random()*4)];
+          } else {
+            // Default hadiah random dari hadiahList (2000-10000)
+            hadiah = hadiahList[Math.floor(Math.random() * hadiahList.length)];
+          }
 
-          hadiahUtama = `Rp${hadiah.toLocaleString()}`;
-          const statusPopup = `MENANG ${hadiahUtama}`;
+          hadiahUtama = `Rp${hadiah.toLocaleString('id-ID')}`;
+          const statusPopup = `SELAMAT! ANDA MENANG ${hadiahUtama}`;
 
           // buka semua box (drum MASIH bunyi)
           bukaSemuaBox();
