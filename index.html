@@ -372,6 +372,39 @@ body {
     // 🔧 GANTI URL INI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT KAMU
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
     
+    // Helper function untuk JSONP (bypass CORS)
+    function callGoogleScript(action, data = {}) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        
+        // Buat URL dengan parameters
+        const params = new URLSearchParams({
+          action: action,
+          callback: callbackName,
+          ...data
+        });
+        
+        const script = document.createElement('script');
+        script.src = `${GOOGLE_SCRIPT_URL}?${params.toString()}`;
+        
+        // Set global callback
+        window[callbackName] = function(result) {
+          resolve(result);
+          document.head.removeChild(script);
+          delete window[callbackName];
+        };
+        
+        // Handle error
+        script.onerror = function() {
+          reject(new Error('Script load failed'));
+          document.head.removeChild(script);
+          delete window[callbackName];
+        };
+        
+        document.head.appendChild(script);
+      });
+    }
+    
     let namaUser = "";
     let kodeToken = "";
     const hadiahList = [2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
@@ -400,19 +433,11 @@ if (!namaUser || !kodeToken) {
     return;
   }
 
-  // 🔧 Pakai fetch ke Google Apps Script
-  fetch(GOOGLE_SCRIPT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action: 'cekToken',
-      nama: namaUser,
-      kode: kodeToken
-    })
+  // 🔧 Pakai JSONP ke Google Apps Script
+  callGoogleScript('cekToken', {
+    nama: namaUser,
+    kode: kodeToken
   })
-  .then(response => response.json())
   .then(res => {
     btnText.innerText = "MULAI VERIFIKASI";
     btnText.classList.remove("loading-dots");
@@ -473,17 +498,8 @@ function pilihBox(el) {
   document.getElementById("sfxPutar").play();
   el.classList.add("clicked");
 
-  // 🔧 Fetch ke Google Apps Script
-  fetch(GOOGLE_SCRIPT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action: 'getSisaHadiah'
-    })
-  })
-  .then(response => response.json())
+  // 🔧 Pakai JSONP ke Google Apps Script
+  callGoogleScript('getSisaHadiah')
   .then(data => {
     hadiahLain = data;
 
@@ -495,19 +511,11 @@ function pilihBox(el) {
       const statusPopup = `MENANG ${hadiahUtama}`;
 
       // 🔧 Simpan hasil ke Google Apps Script
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'simpanHasil',
-          nama: namaUser,
-          kode: kodeToken,
-          status: hadiahUtama
-        })
+      callGoogleScript('simpanHasil', {
+        nama: namaUser,
+        kode: kodeToken,
+        status: hadiahUtama
       })
-      .then(response => response.json())
       .then(() => {
         bukaSemuaBox();
         setTimeout(() => {
@@ -557,18 +565,8 @@ function tampilkanHistoryGabungan() {
     return;
   }
 
-  // 🔧 Fetch ke Google Apps Script
-  fetch(GOOGLE_SCRIPT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action: 'getHistori',
-      nama: user
-    })
-  })
-  .then(response => response.json())
+  // 🔧 Pakai JSONP ke Google Apps Script
+  callGoogleScript('getHistori', { nama: user })
   .then(data => {
     clearInterval(intervalHistori);
     textHistori.innerText = "CEK HISTORI";
